@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 
 import "./styles.css";
@@ -8,20 +8,27 @@ import GithubRepo from "./components/GithubRepo";
 function App() {
   const [keyword, setKeyword] = React.useState("react");
   const [showRepo, setShowRepo] = React.useState(false);
-  const [res, setReq, cancel] = useAsyncEndpoint({
+  useEffect(() => {
+    console.log("fooooooo");
+    return () => {
+      console.log("barbarbar");
+    };
+  }, []);
+  const { res, setReq, cancel } = useAsyncEndpoint({
     url: `/repositories?q=react`,
     method: "get"
   });
 
-  console.log("response:: ", res);
+  // console.log("response:: ", res);
   const { data, errorInfo } = res;
   const handleSubmit = () => {
+    console.log("keyword:: ", keyword);
     setReq({
       url: `/repositories?q=${keyword}`
     });
   };
 
-  console.log("data:: ", data, errorInfo);
+  // console.log("data:: ", data, errorInfo);
   return (
     <div className="App">
       <h1>Hello CodeSandbox</h1>
@@ -37,7 +44,7 @@ function App() {
             handleSubmit();
           }}
         >
-          <input onChange={setKeyword} />
+          <input onChange={e => setKeyword(e.target.value)} />
           <button type="submit">Submit</button>
         </form>
       </div>

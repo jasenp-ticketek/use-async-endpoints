@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import axios from "axios";
 
 export const globalRequestConfig = {
@@ -33,7 +33,12 @@ export const useAsyncEndpoint = (config = {}) => {
   });
   const [req, setReq] = React.useState();
 
+  // const setReqqq = useCallback(args => {
+  //   setReq(args);
+  // }, []);
   React.useEffect(() => {
+    let didCancel = false;
+    console.log("runrunrun");
     const cancel = sourceRef.current.cancel;
     const reqEndpoint = async () => {
       setRes({
@@ -45,43 +50,47 @@ export const useAsyncEndpoint = (config = {}) => {
         statusCode: undefined
       });
       try {
-        console.log("source.current.token:: ", sourceRef.current.token);
         const result = await axios({
           ...globalRequestConfig,
           ...reqConfig.current,
           ...req,
           cancelToken: sourceRef.current.token
         });
-        setRes({
-          data: result.data,
-          isPending: false,
-          hasError: false,
-          isComplete: true,
-          errorInfo: undefined,
-          statusCode: result.status
-        });
+        if (!didCancel) {
+          setRes(() => ({
+            data: result.data,
+            isPending: false,
+            hasError: false,
+            isComplete: true,
+            errorInfo: undefined,
+            statusCode: result.status
+          }));
+        }
       } catch (error) {
         const commonRes = {
           data: undefined,
           isPending: false,
-          hasError: true,
-          isComplete: true
+          hasError: true
         };
-        if (axios.isCancel(error)) {
-          console.log("error 111111 ", error.message);
-          setRes({
-            ...commonRes,
-            errorInfo: error.message,
-            statusCode: "499"
-          });
-          sourceRef.current = axios.CancelToken.source();
-        } else {
-          setRes({
-            ...commonRes,
-            errorInfo: error,
-            statusCode: error.response.status
-          });
+        if (!didCancel) {
+          if (axios.isCancel(error)) {
+            console.log("error 111111 ", error.message);
+            setRes(() => ({
+              ...commonRes,
+              errorInfo: error.message,
+              statusCode: "499"
+            }));
+          } else {
+            setRes(() => ({
+              ...commonRes,
+              errorInfo: error,
+              statusCode: error.response.status,
+              isComplete: true
+            }));
+          }
         }
+      } finally {
+        sourceRef.current = axios.CancelToken.source();
       }
     };
 
@@ -90,9 +99,17 @@ export const useAsyncEndpoint = (config = {}) => {
     reqEndpoint();
 
     return () => {
-      cancel("Unmount page, cancelled.");
+      didCancel = true;
+      if (!didCancel) {
+        console.log("unununun");
+        cancel("Unmount page, cancelled.");
+      }
     };
   }, [req]);
 
-  return [res, setReq, sourceRef.current.cancel];
+  return {
+    res,
+    setReq,
+    cancel: sourceRef.current.cancel
+  };
 };

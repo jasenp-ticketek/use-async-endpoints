@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useAsyncEndpoint } from "../hooks/useAsyncEndpoint";
 
 const GithubRepo = () => {
-  const [res, setReq, cancel] = useAsyncEndpoint({
+  const { res, setReq } = useAsyncEndpoint({
     url: `/repositories?q=react`,
     method: "get"
   });
@@ -16,9 +16,9 @@ const GithubRepo = () => {
   const { data } = res;
   return (
     <ul>
-      {data &&
-        data.items &&
-        data.items.map(item => <li key={item.html_url}>{item.name}</li>)}
+      {((data && data.items) || []).map(item => (
+        <li key={item.html_url}>{item.name}</li>
+      ))}
     </ul>
   );
 };
