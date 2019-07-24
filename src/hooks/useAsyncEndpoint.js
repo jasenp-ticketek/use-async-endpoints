@@ -99,11 +99,12 @@ export const useAsyncEndpoint = (config = {}) => {
     reqEndpoint();
 
     return () => {
-      didCancel = true;
       if (!didCancel) {
         console.log("unununun");
         cancel("Unmount page, cancelled.");
       }
+
+      didCancel = true;
     };
   }, [req]);
 
