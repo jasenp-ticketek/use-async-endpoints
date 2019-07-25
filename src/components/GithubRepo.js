@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useAsyncEndpoint } from "../hooks/useAsyncEndpoint";
 
 const GithubRepo = () => {
-  const { res, setReq } = useAsyncEndpoint({
+  const [res, setReq] = useAsyncEndpoint({
     url: `/repositories?q=react`,
     method: "get"
   });
@@ -10,7 +10,8 @@ const GithubRepo = () => {
   useEffect(() => {
     setReq({
       url: `/repositories?q=redux`,
-      method: "get"
+      method: "get",
+      timeout: 5000
     });
   }, [setReq]);
   const { data } = res;

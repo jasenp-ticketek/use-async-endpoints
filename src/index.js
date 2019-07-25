@@ -14,13 +14,12 @@ function App() {
       console.log("barbarbar");
     };
   }, []);
-  const { res, setReq, cancel } = useAsyncEndpoint({
+  const [res, setReq, cancel] = useAsyncEndpoint({
     url: `/repositories?q=react`,
     method: "get"
   });
 
-  // console.log("response:: ", res);
-  const { data, errorInfo } = res;
+  const { data, statusText, headers } = res;
   const handleSubmit = () => {
     console.log("keyword:: ", keyword);
     setReq({
@@ -28,7 +27,7 @@ function App() {
     });
   };
 
-  // console.log("data:: ", data, errorInfo);
+  console.log("data:: ", data, statusText, headers);
   return (
     <div className="App">
       <h1>Hello CodeSandbox</h1>
@@ -49,7 +48,7 @@ function App() {
         </form>
       </div>
       <div>
-        {errorInfo && <p>{errorInfo}</p>}
+        {statusText && <p>{statusText}</p>}
         <ul>
           {data &&
             data.items &&
