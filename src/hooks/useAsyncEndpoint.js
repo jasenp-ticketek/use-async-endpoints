@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React from "react";
 import axios from "axios";
 
 export const globalRequestConfig = {
@@ -6,9 +6,10 @@ export const globalRequestConfig = {
 };
 
 // Origin: https://medium.com/@jaryd_34198/seamless-api-requests-with-react-hooks-part-2-3ab42ba6ad5c
-/**   repositories?q=
+
+/**
  * Define:
- * const [{ data: addressByIdResult }, getAddressById] = useAsyncEndpoint({
+ * const [ { data: addressByIdResult }, getAddressById, cancel ] = useAsyncEndpoint({
  *   url: "/GetAddressById",
  *   method: "post"
  * });
@@ -16,15 +17,17 @@ export const globalRequestConfig = {
  * Use:
  *   getAddressById({ data: { AddressId: selectedItem.AddressId } });
  *
+ *   cancel("Some cancel message here.....");
+ *
  * @param {object} config Request Configuration
  */
-
 export const useAsyncEndpoint = (config = {}) => {
   const reqConfig = React.useRef(config);
   const sourceRef = React.useRef(axios.CancelToken.source());
 
   const [res, setRes] = React.useState({
     data: undefined,
+    headers: undefined,
     isComplete: false,
     isPending: false,
     hasError: false,
@@ -33,21 +36,20 @@ export const useAsyncEndpoint = (config = {}) => {
   });
   const [req, setReq] = React.useState();
 
-  // const setReqqq = useCallback(args => {
-  //   setReq(args);
-  // }, []);
   React.useEffect(() => {
-    let didCancel = false;
-    console.log("runrunrun");
+    let isCleanup = false;
+
     const cancel = sourceRef.current.cancel;
     const reqEndpoint = async () => {
       setRes({
         data: undefined,
+        headers: undefined,
         isPending: true,
         hasError: false,
         isComplete: false,
         errorInfo: undefined,
-        statusCode: undefined
+        statusCode: undefined,
+        statusText: undefined
       });
       try {
         const result = await axios({
@@ -56,35 +58,42 @@ export const useAsyncEndpoint = (config = {}) => {
           ...req,
           cancelToken: sourceRef.current.token
         });
-        if (!didCancel) {
+
+        if (!isCleanup) {
           setRes(() => ({
             data: result.data,
+            headers: result.headers,
             isPending: false,
             hasError: false,
             isComplete: true,
             errorInfo: undefined,
-            statusCode: result.status
+            statusCode: result.status,
+            statusText: result.statusText
           }));
         }
       } catch (error) {
         const commonRes = {
+          headers: undefined,
           data: undefined,
           isPending: false,
           hasError: true
         };
-        if (!didCancel) {
+
+        if (!isCleanup) {
           if (axios.isCancel(error)) {
-            console.log("error 111111 ", error.message);
             setRes(() => ({
               ...commonRes,
               errorInfo: error.message,
+              statusText: "Canceled",
               statusCode: "499"
             }));
           } else {
             setRes(() => ({
               ...commonRes,
-              errorInfo: error,
+              headers: error.response.headers,
+              errorInfo: error.response,
               statusCode: error.response.status,
+              statusText: error.response.statusText,
               isComplete: true
             }));
           }
@@ -96,21 +105,19 @@ export const useAsyncEndpoint = (config = {}) => {
 
     if (!req) return;
 
-    reqEndpoint();
+    if (!isCleanup) {
+      reqEndpoint();
+    }
 
     return () => {
-      if (!didCancel) {
-        console.log("unununun");
-        cancel("Unmount page, cancelled.");
+      if (!isCleanup) {
+        cancel("Unmount period, cancelled.");
+        sourceRef.current = axios.CancelToken.source();
       }
 
-      didCancel = true;
+      isCleanup = true;
     };
   }, [req]);
 
-  return {
-    res,
-    setReq,
-    cancel: sourceRef.current.cancel
-  };
+  return [res, setReq, sourceRef.current.cancel];
 };
